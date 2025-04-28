@@ -1,0 +1,7 @@
+{
+    // Các cài đặt khác có thể đã có ở đây...
+    "java.project.referencedLibraries": [
+        "lib/mysql-connector-j-9.3.0.jar" // Thay thế bằng tên file JAR chính xác của bạn
+    ]
+    // Các cài đặt khác có thể có ở đây...
+}
