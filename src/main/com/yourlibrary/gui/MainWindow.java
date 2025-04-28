@@ -1,6 +1,7 @@
-package main.com.yourlibrary.gui;
+package main.com.yourlibrary.gui; // Hoặc package bạn đang dùng
 
 import main.com.yourlibrary.dao.BookDao;
+import main.com.yourlibrary.dao.UserDao; // Import UserDao
 import main.com.yourlibrary.model.Book;
 import main.com.yourlibrary.model.User;
 
@@ -10,12 +11,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
-import java.util.Vector; // Dùng Vector cho DefaultTableModel hoặc Object[]
+import java.util.Vector;
 
 public class MainWindow extends JFrame {
 
     private User currentUser;
     private BookDao bookDao;
+    private UserDao userDao; // <<< Thêm biến thành viên UserDao
 
     // Thành phần Giao diện
     private JTextField searchField;
@@ -30,13 +32,14 @@ public class MainWindow extends JFrame {
 
     public MainWindow(User user) {
         this.currentUser = user;
-        this.bookDao = new BookDao(); // Khởi tạo Book DAO
+        this.bookDao = new BookDao();
+        this.userDao = new UserDao(); // <<< Khởi tạo UserDao ở đây
 
         setTitle("Quản lý Thư viện - User: " + currentUser.getUsername() + " (" + currentUser.getRole() + ")");
-        setSize(900, 600); // Tăng kích thước để chứa bảng
+        setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(5, 5)); // Layout chính là BorderLayout
+        setLayout(new BorderLayout(5, 5));
 
         // --- Panel Tìm kiếm (NORTH) ---
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -48,7 +51,7 @@ public class MainWindow extends JFrame {
         showAllButton = new JButton("Hiển thị tất cả");
         searchPanel.add(showAllButton);
         profileButton = new JButton("Hồ sơ");
-        searchPanel.add(profileButton); // Thêm nút Profile vào khu vực tìm kiếm
+        searchPanel.add(profileButton);
 
         add(searchPanel, BorderLayout.NORTH);
 
@@ -57,20 +60,18 @@ public class MainWindow extends JFrame {
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Ngăn không cho sửa trực tiếp trên bảng
                 return false;
             }
         };
         bookTable = new JTable(tableModel);
-        bookTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Chỉ cho chọn 1 hàng
-        bookTable.getTableHeader().setReorderingAllowed(false); // Không cho kéo thả cột
+        bookTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        bookTable.getTableHeader().setReorderingAllowed(false);
 
         // Thiết lập độ rộng cột (tùy chỉnh nếu cần)
-        bookTable.getColumnModel().getColumn(0).setPreferredWidth(40); // ID
-        bookTable.getColumnModel().getColumn(1).setPreferredWidth(100); // ISBN
-        bookTable.getColumnModel().getColumn(2).setPreferredWidth(250); // Title
-        bookTable.getColumnModel().getColumn(3).setPreferredWidth(150); // Author
-        // ... chỉnh các cột khác nếu muốn
+        bookTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+        bookTable.getColumnModel().getColumn(1).setPreferredWidth(100);
+        bookTable.getColumnModel().getColumn(2).setPreferredWidth(250);
+        bookTable.getColumnModel().getColumn(3).setPreferredWidth(150);
 
         JScrollPane scrollPane = new JScrollPane(bookTable);
         add(scrollPane, BorderLayout.CENTER);
@@ -99,10 +100,10 @@ public class MainWindow extends JFrame {
         // --- Xử lý sự kiện cho các nút ---
         searchButton.addActionListener(e -> searchBooks());
         showAllButton.addActionListener(e -> loadAllBooks());
-        addButton.addActionListener(e -> openBookDialog(null)); // null nghĩa là thêm mới
+        addButton.addActionListener(e -> openBookDialog(null));
         editButton.addActionListener(e -> openEditBookDialog());
         deleteButton.addActionListener(e -> deleteSelectedBook());
-        profileButton.addActionListener(e -> openProfileDialog()); // Xử lý nút profile
+        profileButton.addActionListener(e -> openProfileDialog()); // <<< Kết nối nút Hồ sơ với phương thức
 
         // Xử lý nhấn Enter trong ô tìm kiếm
         searchField.addActionListener(e -> searchBooks());
@@ -112,7 +113,7 @@ public class MainWindow extends JFrame {
     // --- Các phương thức xử lý ---
 
     private void loadAllBooks() {
-        searchField.setText(""); // Xóa ô tìm kiếm
+        searchField.setText("");
         List<Book> books = bookDao.getAllBooks();
         displayBooks(books);
     }
@@ -120,7 +121,7 @@ public class MainWindow extends JFrame {
     private void searchBooks() {
         String keyword = searchField.getText().trim();
         if (keyword.isEmpty()) {
-            loadAllBooks(); // Nếu ô tìm kiếm trống thì hiển thị tất cả
+            loadAllBooks();
             return;
         }
         List<Book> books = bookDao.searchBooks(keyword);
@@ -131,24 +132,17 @@ public class MainWindow extends JFrame {
         }
     }
 
-    /**
-     * Hiển thị danh sách sách lên JTable.
-     * 
-     * @param books Danh sách sách cần hiển thị.
-     */
     private void displayBooks(List<Book> books) {
-        // Xóa dữ liệu cũ trong bảng
         tableModel.setRowCount(0);
-
         if (books != null) {
             for (Book book : books) {
-                Vector<Object> row = new Vector<>(); // Hoặc dùng Object[]
+                Vector<Object> row = new Vector<>();
                 row.add(book.getBookId());
                 row.add(book.getIsbn());
                 row.add(book.getTitle());
                 row.add(book.getAuthor());
                 row.add(book.getGenre());
-                row.add(book.getPublicationYear() > 0 ? book.getPublicationYear() : ""); // Hiển thị rỗng nếu năm là 0
+                row.add(book.getPublicationYear() > 0 ? book.getPublicationYear() : "");
                 row.add(book.getQuantity());
                 row.add(book.getAvailableQuantity());
                 tableModel.addRow(row);
@@ -156,19 +150,9 @@ public class MainWindow extends JFrame {
         }
     }
 
-    /**
-     * Mở dialog để thêm hoặc sửa sách.
-     * 
-     * @param bookToEdit Sách cần sửa (null nếu là thêm mới).
-     */
     private void openBookDialog(Book bookToEdit) {
-        // Tạo và hiển thị BookDialog
-        // Tham số: owner=this, modal=true, book=bookToEdit
         BookDialog bookDialog = new BookDialog(this, true, bookToEdit, bookDao);
-        bookDialog.setVisible(true); // Hiển thị dialog và chờ nó đóng lại
-
-        // Sau khi dialog đóng, làm mới danh sách sách
-        // Có thể tối ưu chỉ tìm kiếm lại nếu đang có từ khóa, hoặc load lại tất cả
+        bookDialog.setVisible(true);
         if (searchField.getText().trim().isEmpty()) {
             loadAllBooks();
         } else {
@@ -176,36 +160,24 @@ public class MainWindow extends JFrame {
         }
     }
 
-    /**
-     * Lấy sách đang được chọn và mở dialog sửa.
-     */
     private void openEditBookDialog() {
         int selectedRow = bookTable.getSelectedRow();
-        if (selectedRow == -1) { // Kiểm tra xem có hàng nào được chọn không
+        if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một cuốn sách để sửa.", "Chưa chọn sách",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        // Lấy bookId từ cột đầu tiên (cột 0) của hàng được chọn
-        // Cần đảm bảo cột 0 đúng là book_id
         int bookId = (Integer) tableModel.getValueAt(selectedRow, 0);
-
-        // Lấy thông tin đầy đủ của sách từ DB (an toàn hơn lấy trực tiếp từ bảng)
         Book bookToEdit = bookDao.findBookById(bookId);
-
         if (bookToEdit != null) {
-            openBookDialog(bookToEdit); // Mở dialog với thông tin sách đã lấy
+            openBookDialog(bookToEdit);
         } else {
-            JOptionPane.showMessageDialog(this, "Không thể lấy thông tin sách để sửa. Sách có thể đã bị xóa.", "Lỗi",
+            JOptionPane.showMessageDialog(this, "Không thể lấy thông tin sách để sửa.", "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
-            loadAllBooks(); // Tải lại danh sách phòng trường hợp sách vừa bị xóa
+            loadAllBooks();
         }
     }
 
-    /**
-     * Xóa cuốn sách đang được chọn.
-     */
     private void deleteSelectedBook() {
         int selectedRow = bookTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -213,50 +185,48 @@ public class MainWindow extends JFrame {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int bookId = (Integer) tableModel.getValueAt(selectedRow, 0);
-        String bookTitle = (String) tableModel.getValueAt(selectedRow, 2); // Lấy tiêu đề để hiển thị xác nhận
-
-        // Hiển thị hộp thoại xác nhận
+        String bookTitle = (String) tableModel.getValueAt(selectedRow, 2);
         int confirmation = JOptionPane.showConfirmDialog(this,
                 "Bạn có chắc chắn muốn xóa cuốn sách:\n'" + bookTitle + "' (ID: " + bookId + ")?",
                 "Xác nhận xóa sách",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
-
         if (confirmation == JOptionPane.YES_OPTION) {
             boolean success = bookDao.deleteBook(bookId);
             if (success) {
                 JOptionPane.showMessageDialog(this, "Đã xóa sách thành công!", "Thành công",
                         JOptionPane.INFORMATION_MESSAGE);
-                // Làm mới danh sách
                 if (searchField.getText().trim().isEmpty()) {
                     loadAllBooks();
                 } else {
                     searchBooks();
                 }
             } else {
-                JOptionPane.showMessageDialog(this,
-                        "Xóa sách thất bại. Có thể sách đang được tham chiếu hoặc có lỗi xảy ra.", "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Xóa sách thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-    /**
-     * Mở dialog quản lý thông tin cá nhân.
-     */
+    // --- Phương thức mở Dialog Hồ sơ (ĐÃ SỬA) ---
     private void openProfileDialog() {
-        // Tạo và hiển thị UserProfileDialog (bạn sẽ tạo lớp này sau)
-        // UserProfileDialog profileDialog = new UserProfileDialog(this, true,
-        // currentUser);
-        // profileDialog.setVisible(true);
+        // Tạo và hiển thị UserProfileDialog, truyền vào this (MainWindow), modal=true,
+        // currentUser và đối tượng userDao đã khởi tạo.
+        UserProfileDialog profileDialog = new UserProfileDialog(this, true, currentUser, userDao);
+        profileDialog.setVisible(true);
 
-        // Sau khi dialog đóng, có thể cần cập nhật lại tiêu đề cửa sổ nếu tên thay đổi
-        // setTitle("Quản lý Thư viện - User: " + currentUser.getUsername() + " (" +
-        // currentUser.getRole() + ")");
-
-        JOptionPane.showMessageDialog(this, "Chức năng quản lý hồ sơ sẽ được thực hiện ở bước sau.");
+        // Không cần làm gì thêm ở đây, việc cập nhật MainWindow (nếu cần)
+        // sẽ được thực hiện thông qua phương thức updateUserInfo
     }
 
-}
+    // --- Phương thức để UserProfileDialog gọi lại (ĐÃ THÊM) ---
+    public void updateUserInfo(User updatedUser) {
+        this.currentUser = updatedUser; // Cập nhật đối tượng user hiện tại trong MainWindow
+        // Cập nhật lại tiêu đề cửa sổ để phản ánh thay đổi (ví dụ: nếu tên thay đổi)
+        setTitle("Quản lý Thư viện - User: " + currentUser.getUsername() + " (" + currentUser.getRole() + ")");
+        // Bạn có thể cập nhật thêm các thành phần khác trên MainWindow nếu cần
+        // Ví dụ: một JLabel chào mừng hiển thị tên đầy đủ.
+        System.out.println("Thông tin người dùng trên MainWindow đã được cập nhật."); // Log để kiểm tra
+    }
+
+} // Kết thúc lớp MainWindow
