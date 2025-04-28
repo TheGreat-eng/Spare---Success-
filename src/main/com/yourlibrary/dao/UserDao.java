@@ -5,8 +5,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserDao {
+
+    private BorrowDao borrowDao = new BorrowDao(); // Cần khởi tạo nó
 
     // --- Xác thực người dùng (SO SÁNH PLAIN TEXT) ---
     public User authenticateUser(String username, String plainPassword) {
@@ -217,4 +222,179 @@ public class UserDao {
         }
         return user;
     }
+
+    // Thêm vào cuối lớp UserDao.java
+
+    /**
+     * Lấy danh sách tất cả người dùng từ cơ sở dữ liệu, sắp xếp theo username.
+     * 
+     * @return Danh sách các đối tượng User.
+     */
+    public List<User> getAllUsers() {
+        List<User> users = new ArrayList<>();
+        // Lấy tất cả các cột cần thiết, không nên lấy password_hash trừ khi thực sự cần
+        String sql = "SELECT user_id, username, email, full_name, role FROM users ORDER BY username ASC";
+        Connection conn = null;
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseUtil.getConnection();
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                User user = new User();
+                user.setUserId(rs.getInt("user_id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setFullName(rs.getString("full_name"));
+                user.setRole(rs.getString("role"));
+                // Không lấy password_hash vào danh sách chung
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi lấy danh sách người dùng: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.close(rs, stmt, conn);
+        }
+        return users;
+    }
+
+    /**
+     * Tìm kiếm người dùng dựa trên từ khóa (username, email, họ tên).
+     * 
+     * @param keyword Từ khóa tìm kiếm.
+     * @return Danh sách người dùng phù hợp.
+     */
+    public List<User> searchUsers(String keyword) {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT user_id, username, email, full_name, role FROM users " +
+                "WHERE username LIKE ? OR email LIKE ? OR full_name LIKE ? ORDER BY username ASC";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        String searchPattern = "%" + keyword + "%";
+
+        try {
+            conn = DatabaseUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, searchPattern); // username
+            pstmt.setString(2, searchPattern); // email
+            pstmt.setString(3, searchPattern); // full_name
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                User user = new User();
+                user.setUserId(rs.getInt("user_id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setFullName(rs.getString("full_name"));
+                user.setRole(rs.getString("role"));
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi tìm kiếm người dùng: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.close(rs, pstmt, conn);
+        }
+        return users;
+    }
+
+    /**
+     * Cập nhật thông tin người dùng bởi Admin/Librarian (có thể đổi cả role).
+     * Phương thức này KHÔNG cập nhật mật khẩu.
+     * 
+     * @param user Đối tượng User chứa thông tin cập nhật (phải có userId).
+     * @return true nếu cập nhật thành công, false nếu thất bại.
+     */
+    public boolean updateUserByAdmin(User user) {
+        if (user == null || user.getUserId() <= 0) {
+            System.err.println("Thông tin cập nhật người dùng bởi admin không hợp lệ.");
+            return false;
+        }
+        // Cho phép cập nhật username, email, fullname, role
+        String sql = "UPDATE users SET username = ?, email = ?, full_name = ?, role = ? WHERE user_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            conn = DatabaseUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, user.getUsername());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setString(3, user.getFullName());
+            pstmt.setString(4, user.getRole());
+            pstmt.setInt(5, user.getUserId()); // Điều kiện WHERE
+
+            int rowsAffected = pstmt.executeUpdate();
+            success = (rowsAffected > 0);
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi admin cập nhật người dùng: " + e.getMessage());
+            if (e.getMessage().toLowerCase().contains("duplicate entry")) {
+                System.err.println("Lỗi: Username hoặc Email '"
+                        + (e.getMessage().contains("username") ? user.getUsername() : user.getEmail())
+                        + "' đã tồn tại.");
+            }
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.close(pstmt, conn);
+        }
+        return success;
+    }
+
+    /**
+     * Xóa một người dùng khỏi cơ sở dữ liệu dựa trên userId.
+     * CẢNH BÁO: Chưa kiểm tra ràng buộc (ví dụ: user đang mượn sách).
+     * 
+     * @param userId ID của người dùng cần xóa.
+     * @return true nếu xóa thành công, false nếu thất bại.
+     */
+    public boolean deleteUser(int userId) {
+        if (userId <= 0)
+            return false;
+
+        // --- KIỂM TRA SÁCH ĐANG MƯỢN ---
+        if (borrowDao.hasActiveLoans(userId)) {
+            System.err.println("Không thể xóa user ID " + userId + " vì đang có sách mượn chưa trả.");
+            // Có thể hiển thị thông báo này lên GUI thay vì chỉ in ra console
+            return false; // Trả về false để ngăn việc xóa
+        }
+        // --- KẾT THÚC KIỂM TRA ---
+
+        // TODO: Thêm kiểm tra ràng buộc trước khi xóa (ví dụ: kiểm tra bảng borrows)
+        // if (borrowDao.hasActiveLoans(userId)) {
+        // System.err.println("Không thể xóa user ID " + userId + " vì đang có sách mượn
+        // chưa trả.");
+        // return false;
+        // }
+
+        String sql = "DELETE FROM users WHERE user_id = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        boolean success = false;
+
+        try {
+            conn = DatabaseUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, userId);
+
+            int rowsAffected = pstmt.executeUpdate();
+            success = (rowsAffected > 0);
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi xóa người dùng: " + e.getMessage());
+            // Có thể do Foreign Key constraint nếu chưa xử lý đúng (ví dụ trong
+            // support_requests)
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.close(pstmt, conn);
+        }
+        return success;
+    }
+
 }

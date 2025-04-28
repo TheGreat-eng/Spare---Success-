@@ -251,4 +251,30 @@ public class BookDao {
         // book.setUpdatedAt(rs.getTimestamp("updated_at"));
         return book;
     }
+
+    public Book findBookByIsbn(String isbn) {
+        String sql = "SELECT book_id, isbn, title, author, genre, publication_year, description, quantity, available_quantity FROM books WHERE isbn = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        Book book = null;
+
+        try {
+            conn = DatabaseUtil.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, isbn);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                // Dùng lại hàm map đã có
+                book = mapResultSetToBook(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi tìm sách theo ISBN: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            DatabaseUtil.close(rs, pstmt, conn);
+        }
+        return book;
+    }
 }

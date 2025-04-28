@@ -1,6 +1,8 @@
 package main.com.yourlibrary.gui;
 
+import main.com.yourlibrary.dao.BorrowDao;
 import main.com.yourlibrary.dao.UserDao;
+import main.com.yourlibrary.model.BorrowRecord;
 import main.com.yourlibrary.model.User;
 
 import javax.swing.*;
@@ -8,6 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays; // Để xóa mảng char password
+import java.util.List; // Để xóa mảng char password
 
 public class UserProfileDialog extends JDialog {
 
@@ -132,6 +135,8 @@ public class UserProfileDialog extends JDialog {
         JPanel bottomButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         cancelButton = new JButton("Đóng");
         bottomButtonPanel.add(cancelButton);
+        // JButton historyButton = new JButton("Xem lịch sử mượn/trả");
+        // bottomButtonPanel.add(historyButton, 0);
 
         // --- Thêm các panel vào Dialog ---
         JPanel centerPanel = new JPanel(); // Panel trung tâm để chứa 2 panel trên
@@ -146,7 +151,31 @@ public class UserProfileDialog extends JDialog {
         saveProfileButton.addActionListener(e -> saveProfileChanges());
         changePasswordButton.addActionListener(e -> changePassword());
         cancelButton.addActionListener(e -> dispose());
+        // historyButton.addActionListener(e -> viewMyHistory());
+
     }
+
+    // private void viewMyHistory() {
+    // // Cần có BorrowDao ở đây. Phải truyền nó vào constructor của
+    // UserProfileDialog
+    // // hoặc lấy nó từ MainWindow (nếu có tham chiếu)
+    // if (userDao == null) { // UserDao đã có, BorrowDao cần thêm
+    // JOptionPane.showMessageDialog(this, "Lỗi: Không thể truy cập dữ liệu mượn
+    // trả.", "Lỗi",
+    // JOptionPane.ERROR_MESSAGE);
+    // return;
+    // }
+    // BorrowDao localBorrowDao = new BorrowDao(); // Hoặc lấy từ nguồn khác
+
+    // List<BorrowRecord> history =
+    // localBorrowDao.getLoanHistoryByUser(currentUser.getUserId());
+
+    // String dialogTitle = "Lịch sử mượn/trả của bạn (" + currentUser.getUsername()
+    // + ")";
+    // LoanHistoryDialog historyDialog = new LoanHistoryDialog(this, dialogTitle,
+    // history);
+    // historyDialog.setVisible(true);
+    // }
 
     private void saveProfileChanges() {
         String newEmail = emailField.getText().trim();
