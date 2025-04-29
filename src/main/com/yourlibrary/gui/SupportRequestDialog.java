@@ -1,5 +1,6 @@
 package main.com.yourlibrary.gui;
 
+import main.com.yourlibrary.dao.DatabaseUtil;
 import main.com.yourlibrary.dao.SupportRequestDao;
 import main.com.yourlibrary.model.SupportRequest;
 import main.com.yourlibrary.model.User;
@@ -8,6 +9,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SupportRequestDialog extends JDialog {
 
@@ -107,4 +117,5 @@ public class SupportRequestDialog extends JDialog {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
+
 }

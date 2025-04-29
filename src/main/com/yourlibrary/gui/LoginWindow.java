@@ -15,6 +15,7 @@ public class LoginWindow extends JFrame {
     private JPasswordField passwordField;
     private JButton loginButton;
     private UserDao userDao; // Đối tượng để tương tác với DB User
+    private JButton registerButton;
 
     public LoginWindow() {
         userDao = new UserDao(); // Khởi tạo DAO
@@ -63,6 +64,15 @@ public class LoginWindow extends JFrame {
         loginButton = new JButton("Đăng nhập");
         panel.add(loginButton, gbc);
 
+        // Nút Đăng ký
+        gbc.gridx = 0;
+        gbc.gridy = 3; // Đặt ở hàng dưới nút Đăng nhập
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
+        registerButton = new JButton("Đăng ký tài khoản mới");
+        panel.add(registerButton, gbc);
+
         // Thêm panel vào Frame
         add(panel);
 
@@ -71,6 +81,14 @@ public class LoginWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 handleLogin();
+            }
+        });
+
+        // --- Xử lý sự kiện nhấn nút Đăng ký --- <<< THÊM MỚI
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openRegisterDialog(); // Gọi hàm mở dialog đăng ký
             }
         });
     }
@@ -113,6 +131,14 @@ public class LoginWindow extends JFrame {
                     "Tên đăng nhập hoặc mật khẩu không đúng.",
                     "Đăng nhập thất bại", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void openRegisterDialog() {
+        // Tạo và hiển thị RegisterDialog
+        // Cần truyền UserDao vào để dialog có thể gọi hàm addUser
+        RegisterDialog registerDialog = new RegisterDialog(this, true, userDao); // owner là LoginWindow (JFrame)
+        registerDialog.setVisible(true);
+        // Không cần làm gì sau khi dialog đăng ký đóng lại
     }
 
 }
